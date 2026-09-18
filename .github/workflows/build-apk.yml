@@ -32,18 +32,36 @@ jobs:
           channel: 'stable'
 
       - name: Migrate to Android V2 embedding
+        shell: python
         run: |
-          python3 << 'PY'
           import glob
           for manifest in glob.glob("**/AndroidManifest.xml", recursive=True):
               print("Patching", manifest)
               with open(manifest) as f:
-                  txt=f.read()
+                  txt = f.read()
               if "flutterEmbedding" not in txt:
-                  txt=txt.replace("</application>", '        <meta-data android:name="flutterEmbedding" android:value="2" />\n    </application>')
-                  open(manifest,"w").write(txt)
+                  txt = txt.replace("</application>", '        <meta-data android:name="flutterEmbedding" android:value="2" />\n    </application>')
+                  open(manifest, "w").write(txt)
                   print("Added flutterEmbedding=2")
           for mf in glob.glob("**/MainActivity.*", recursive=True):
               print("Checking", mf)
-              with open(mf)
+              with open(mf) as f:
+                  t = f.read()
+              if "io.flutter.app.FlutterActivity" in t:
+                  t = t.replace("io.flutter.app.FlutterActivity", "io.flutter.embedding.android.FlutterActivity")
+                  open(mf, "w").write(t)
+                  print("Fixed MainActivity import")
+
+      - name: Build APK
+        run: |
+          flutter pub add flutter_tts:^4.0.2
+          flutter pub get
+          flutter build apk --debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SAMRAT-Pay-Alert-APK
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          
               
