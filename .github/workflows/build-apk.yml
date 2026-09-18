@@ -1,64 +1,57 @@
 name: Build APK
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
+on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Unzip project
+        run: |
+          ZIP_FILE=$(ls *.zip | head -n 1)
+          echo "Found: $ZIP_FILE"
+          unzip -o "$ZIP_FILE" -d extracted
+          rm "$ZIP_FILE"
+          PROJ_DIR=$(find extracted -name "pubspec.yaml" -exec dirname {} \; | head -n 1)
+          echo "Project dir: $PROJ_DIR"
+          shopt -s dotglob
+          mv "$PROJ_DIR"/* .
+          rm -rf extracted
+          ls -la
+          ls -la android/app/ || echo "no android folder yet"
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
           java-version: '17'
+          distribution: 'temurin'
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
           channel: 'stable'
 
       - name: Setup Android SDK (Manual)
         run: |
-          # 1. Android SDK కమాండ్ లైన్ టూల్స్ డౌన్‌లోడ్ చేయండి
-          mkdir -p $HOME/android-sdk/cmdline-tools
-          cd $HOME/android-sdk/cmdline-tools
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
-          unzip -q cmdtools.zip
-          mv cmdline-tools latest
-          rm cmdtools.zip
-          
-          # 2. పాత్ (PATH) సెట్ చేయండి
-          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
-          
-          # 3. లైసెన్స్ అంగీకరించి, SDK 35 ఇన్‌స్టాల్ చేయండి
-          yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
-          $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          sdkmanager "platforms;android-35" "build-tools;35.0.0" || true
 
       - name: Fix Android Build for SDK 35
         run: |
-          sed -i -E 's/(compileSdk)(Version)?[[:space:]]+[0-9]+/\1\2 35/' android/app/build.gradle
-          sed -i -E 's/(targetSdk)(Version)?[[:space:]]+[0-9]+/\1\2 35/' android/app/build.gradle
-          sed -i -E 's/(minSdk)(Version)?[[:space:]]+[0-9]+/\1\2 21/' android/app/build.gradle
-          sed -i 's/sourceCompatibility .*/sourceCompatibility JavaVersion.VERSION_17/' android/app/build.gradle
-          sed -i 's/targetCompatibility .*/targetCompatibility JavaVersion.VERSION_17/' android/app/build.gradle
-          sed -i 's/id "com.android.application" version .*/id "com.android.application" version "8.1.0" apply false/' android/settings.gradle
-          flutter clean
+          if [ ! -f android/app/build.gradle ]; then
+            echo "android folder missing, creating with flutter create"
+            flutter create --org com.samrat --project-name samrat_pay_alert --no-pub .
+          fi
+          sed -i -E 's/compileSdk(Version)?[[:space:]]+[0-9]+/compileSdkVersion 35/' android/app/build.gradle || true
+          grep -n compileSdk android/app/build.gradle || true
+          sed -i 's/flutter_tts:.*/flutter_tts: ^4.2.2/' pubspec.yaml || true
           flutter pub get
 
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: SAMRAT-Pay-Alert-APK
+          path: build/app/outputs/flutter-apk/app-debug.apk
