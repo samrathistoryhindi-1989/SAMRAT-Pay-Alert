@@ -46,7 +46,18 @@ jobs:
           grep -n compileSdk android/app/build.gradle || true
           sed -i 's/flutter_tts:.*/flutter_tts: ^4.2.2/' pubspec.yaml || true
           flutter pub get
-
+      - name: Fix Android Build for SDK 35
+        run: |
+          if [ ! -f android/app/build.gradle ]; then
+            flutter create --org com.samrat --project-name samrat_pay_alert --no-pub .
+          fi
+          sed -i -E 's/compileSdk(Version)?[[:space:]]+[0-9]+/compileSdkVersion 35/' android/app/build.gradle || true
+          sed -i 's/flutter_tts:.*/flutter_tts: ^4.2.2/' pubspec.yaml || true
+          # setAudioAttributes method లేదు కాబట్టి ఆ line ని తీసెయ్యి
+          sed -i '/setAudioAttributes/d' lib/services/tts_service.dart
+          grep -n "setAudioAttributes" lib/services/tts_service.dart || echo "patched - method removed"
+          flutter pub get
+          
       - name: Build APK
         run: flutter build apk --debug
 
