@@ -33,9 +33,13 @@ jobs:
 
       - name: Fix Android V2 embedding
         run: |
+          # 1. pubspec లో flutter_tts version ముందే downgrade చెయ్యి
+          sed -i 's/flutter_tts:.*/flutter_tts: ^4.0.2/' pubspec.yaml
+          grep -n flutter_tts pubspec.yaml
+          # 2. పాత android delete చేసి --no-pub తో కొత్తది create చెయ్యి
           rm -rf android
-          flutter create --org com.samrat --project-name samrat_pay_alert .
-          flutter pub add flutter_tts:^4.0.2
+          flutter create --org com.samrat --project-name samrat_pay_alert --no-pub .
+          # 3. ఇప్పుడు dependencies తెచ్చుకో
           flutter pub get
 
       - name: Build APK
