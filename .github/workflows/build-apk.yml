@@ -27,24 +27,17 @@ jobs:
 
       - name: Setup Android SDK 35
         run: |
-          yes | sdkmanager --licenses > /dev/null 2>&1 || true
-          sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools" > /dev/null 2>&1
+          sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
 
       - name: Fix Android Build for SDK 35
         run: |
-          # SDK వెర్షన్స్ అప్‌డేట్ (రెండు ఫార్మాట్లకూ పనిచేస్తుంది)
           sed -i -E 's/(compileSdk)(Version)?[[:space:]]+[0-9]+/\1\2 35/' android/app/build.gradle
           sed -i -E 's/(targetSdk)(Version)?[[:space:]]+[0-9]+/\1\2 35/' android/app/build.gradle
           sed -i -E 's/(minSdk)(Version)?[[:space:]]+[0-9]+/\1\2 21/' android/app/build.gradle
-
-          # JDK 17 కంపాటిబిలిటీ
           sed -i 's/sourceCompatibility .*/sourceCompatibility JavaVersion.VERSION_17/' android/app/build.gradle
           sed -i 's/targetCompatibility .*/targetCompatibility JavaVersion.VERSION_17/' android/app/build.gradle
-
-          # AGP వెర్షన్ అప్‌డేట్
           sed -i 's/id "com.android.application" version .*/id "com.android.application" version "8.1.0" apply false/' android/settings.gradle
-
-          # క్లీన్ బిల్డ్
           flutter clean
           flutter pub get
 
@@ -56,3 +49,4 @@ jobs:
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          
