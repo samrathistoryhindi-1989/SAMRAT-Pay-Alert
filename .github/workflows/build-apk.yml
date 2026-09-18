@@ -25,15 +25,13 @@ jobs:
           flutter-version: '3.24.0'
           channel: 'stable'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Setup Android SDK 35
+        run: |
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools" > /dev/null 2>&1
 
       - name: Fix Android Build for SDK 35
         run: |
-          # Android SDK 35 లైసెన్స్ మరియు ప్లాట్‌ఫారమ్
-          yes | sdkmanager --licenses > /dev/null 2>&1 || true
-          sdkmanager "platforms;android-35" "build-tools;35.0.0" > /dev/null 2>&1 || true
-
           # SDK వెర్షన్స్ అప్‌డేట్ (రెండు ఫార్మాట్లకూ పనిచేస్తుంది)
           sed -i -E 's/(compileSdk)(Version)?[[:space:]]+[0-9]+/\1\2 35/' android/app/build.gradle
           sed -i -E 's/(targetSdk)(Version)?[[:space:]]+[0-9]+/\1\2 35/' android/app/build.gradle
@@ -58,4 +56,3 @@ jobs:
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-          
