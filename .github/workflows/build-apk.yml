@@ -8,11 +8,15 @@ jobs:
 
       - name: Unzip project
         run: |
-          unzip -o "*.zip" -d extracted
-          cp -r extracted/. temp_proj
-          rm -rf extracted temp_proj/*.zip
+          ZIP_FILE=$(ls *.zip | head -n 1)
+          echo "Unzipping $ZIP_FILE"
+          unzip -o "$ZIP_FILE" -d extracted
+          rm "$ZIP_FILE"
+          PROJ_DIR=$(find extracted -name "pubspec.yaml" -exec dirname {} \; | head -n 1)
+          echo "Project dir: $PROJ_DIR"
           shopt -s dotglob
-          mv temp_proj/* . 2>/dev/null || true
+          mv "$PROJ_DIR"/* .
+          rm -rf extracted
           ls -la
 
       - name: Set up Java 17
@@ -36,3 +40,4 @@ jobs:
         with:
           name: SAMRAT-Pay-Alert-APK
           path: build/app/outputs/flutter-apk/app-debug.apk
+          
