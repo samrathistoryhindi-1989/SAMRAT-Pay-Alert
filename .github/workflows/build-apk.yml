@@ -51,4 +51,3 @@ jobs:
         with:
           name: SAMRAT-Pay-Alert-APK
           path: build/app/outputs/flutter-apk/app-debug.apk
-          
