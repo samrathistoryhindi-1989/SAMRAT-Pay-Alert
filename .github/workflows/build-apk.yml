@@ -44,13 +44,15 @@ jobs:
           sed -i -E 's/compileSdk(Version)?[[:space:]]+[0-9]+/compileSdkVersion 35/' android/app/build.gradle || true
           grep -n compileSdk android/app/build.gradle || true
           sed -i 's/flutter_tts:.*/flutter_tts: ^4.2.2/' pubspec.yaml || true
+          sed -i 's/ package="[^"]*"//g' android/app/src/main/AndroidManifest.xml
+          mkdir -p assets/sounds
           python3 -c "
           import pathlib, re
           p = pathlib.Path('lib/services/tts_service.dart')
           t = p.read_text()
           t = re.sub(r'await _flutterTts\.setAudioAttributes\(.*?\);\s*', '', t, flags=re.DOTALL)
           p.write_text(t)
-          print('patched tts_service.dart - setAudioAttributes block removed')
+          print('patched tts_service.dart')
           "
           flutter pub get
 
@@ -62,3 +64,4 @@ jobs:
         with:
           name: SAMRAT-Pay-Alert-APK
           path: build/app/outputs/flutter-apk/app-debug.apk
+          
