@@ -32,19 +32,19 @@ jobs:
 
       - name: Setup Android SDK (Manual)
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" || true
           sdkmanager "platforms;android-35" "build-tools;35.0.0" || true
 
       - name: Fix Android Build for SDK 35
         run: |
           if [ ! -f android/app/build.gradle ]; then
-            echo "android folder missing, creating with flutter create"
             flutter create --org com.samrat --project-name samrat_pay_alert --no-pub .
           fi
-          sed -i -E 's/compileSdk(Version)?[[:space:]]+[0-9]+/compileSdkVersion 35/' android/app/build.gradle || true
-          grep -n compileSdk android/app/build.gradle || true
+          sed -i -E 's/compileSdk(Version)?[[:space:]]+[0-9]+/compileSdkVersion 36/' android/app/build.gradle || true
+          sed -i -E 's/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion 36/' android/build.gradle || true
           sed -i 's/flutter_tts:.*/flutter_tts: ^4.2.2/' pubspec.yaml || true
-          sed -i 's/ package="[^"]*"//g' android/app/src/main/AndroidManifest.xml
+          sed -i 's/vibration:.*/vibration: ^3.1.3/' pubspec.yaml || true
+          sed -i 's/ package="[^"]*"//g' android/app/src/main/AndroidManifest.xml || true
           mkdir -p assets/sounds
           python3 -c "
           import pathlib, re
@@ -55,6 +55,7 @@ jobs:
           print('patched tts_service.dart')
           "
           flutter pub get
+          flutter pub upgrade vibration || true
 
       - name: Build APK
         run: flutter build apk --debug
@@ -64,4 +65,3 @@ jobs:
         with:
           name: SAMRAT-Pay-Alert-APK
           path: build/app/outputs/flutter-apk/app-debug.apk
-          
